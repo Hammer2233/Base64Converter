@@ -8,6 +8,8 @@ import java.awt.Desktop;
 public class Conversion
 {
     static int currentPDFNumber = 0;
+    static int failedPDFs = 0;
+    static int successfulPDFs = 0;
     public static int setPDFNumTo0 (int currentNumber)
     {
         currentPDFNumber = currentNumber;
@@ -81,18 +83,33 @@ public class Conversion
                     // no application registered for PDFs
                 }
             }
+            setSuccess();
+            System.out.println("Success: " + successfulPDFs);
+            System.out.println("Failed: " + failedPDFs);
         }
         catch (Exception c) 
         {
             System.out.println("PDF GENERATION FAILED");
+            setFailed();
+            System.out.println("Failed: " + failedPDFs);
+            System.out.println("Success: " + successfulPDFs);
             System.out.println(c);
-            if(c.toString().contains("Last unit does not have enough valid bits"))
+            String error = c.toString();
+            if(error.contains("Last unit does not have enough valid bits"))
             {
             	Base64V8.parrotError("ERROR GENERATING PDF!\nERROR: Last unit does not have enough valid bits\n\nCommon error for incomplete Base64 segments\nPlease verify the segment is fully intact");
             }
-            else if(c.toString().contains("Illegal base64 character"))
+            else if(error.contains("Illegal base64 character"))
             {
-            	Base64V8.parrotError("ERROR GENERATING PDF!\nERROR: Illegal base64 character\n\nPlease ensure that there are no invalid characters in the\nBase64 (ex: semi-colons ';')");
+            	Base64V8.parrotError("ERROR GENERATING PDF!\nERROR: Illegal base64 character\n\nPlease ensure that there are no invalid characters in the\nBase64 (ex: semi-colons ';', underscores '_', dashes '-')");
+            }
+            else if(error.contains("Input byte array has wrong 4-byte ending unit"))
+            {
+            	Base64V8.parrotError("ERROR GENERATING PDF!\nERROR: " + c.toString().replace("java.lang.IllegalArgumentException: ", "") + "\n\nCommonly thrown error when the Base64 string is incomplete.\nPlease validate the Base64 then re-copy the Base64 segment\nand convert again");
+            }
+            else if(error.contains("Input byte array has incorrect ending byte"))
+            {
+            	Base64V8.parrotError("ERROR GENERATING PDF!\nERROR: " + c.toString().replace("java.lang.IllegalArgumentException: ", "") + "\n\nCommonly thrown error when the Base64 string has more\nthan 1 'JVBER' in the string. Please verify the Base64 string again");
             }
             c.printStackTrace();
         }
@@ -138,5 +155,31 @@ public class Conversion
     		System.out.println("VALID PDF");
             return "Invalid"; // Not a valid Base64 string
         }
+    }
+    
+    public static int setFailed()
+    {
+    	failedPDFs++;
+    	return failedPDFs;
+    }
+    
+    public static int getFailed()
+    {
+    	int lastFailedValue = failedPDFs;
+    	failedPDFs = 0;
+    	return lastFailedValue;
+    }
+    
+    public static int setSuccess()
+    {
+    	successfulPDFs++;
+    	return successfulPDFs;
+    }
+    
+    public static int getSuccess()
+    {
+    	int lastSuccessfulPDFs = successfulPDFs;
+    	successfulPDFs = 0;
+    	return lastSuccessfulPDFs;
     }
 }
